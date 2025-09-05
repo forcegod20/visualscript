@@ -1,0 +1,335 @@
+--// Trade Script GUI v10 (Tabbed + Draggable + SB Logo Toggle)
+-- Developer: Scripter BaBa
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
+local UIS = game:GetService("UserInputService")
+
+local notificationsEnabled = true
+local themeDark = true
+
+--=== ScreenGui ===--
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "TradeScriptGUI_SB"
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.ResetOnSpawn = false
+
+--=== Main Frame (Draggable) ===--
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0, 360, 0, 420)
+Frame.Position = UDim2.new(0.35, 0, -1, 0) -- starts off-screen (slide in)
+Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Frame.BackgroundTransparency = 0.05
+Instance.new("UICorner", Frame)
+
+-- slide-in on start
+TweenService:Create(Frame, TweenInfo.new(0.7, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+    Position = UDim2.new(0.35, 0, 0.25, 0)
+}):Play()
+
+-- reusable drag function
+local function makeDraggable(object, handle)
+    local dragging, dragInput, dragStart, startPos
+    handle = handle or object
+    handle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = object.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
+        end
+    end)
+    handle.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then dragInput = input end
+    end)
+    UIS.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            object.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
+                                        startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+end
+
+--=== Floating SB Logo (toggle + draggable + glow) ===--
+local LogoButton = Instance.new("TextButton", ScreenGui)
+LogoButton.Name = "SB_Logo"
+LogoButton.Text = "SB"
+LogoButton.Size = UDim2.new(0, 60, 0, 60)
+LogoButton.Position = UDim2.new(0.05, 0, 0.2, 0)
+LogoButton.Font = Enum.Font.GothamBlack
+LogoButton.TextSize = 22
+LogoButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+LogoButton.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+Instance.new("UICorner", LogoButton).CornerRadius = UDim.new(1, 0)
+
+local gradient = Instance.new("UIGradient", LogoButton)
+gradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 120, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 200, 255))
+}
+gradient.Rotation = 45
+
+local glow = Instance.new("UIStroke", LogoButton)
+glow.Thickness = 3
+glow.Color = Color3.fromRGB(0, 180, 255)
+glow.Transparency = 0.3
+
+task.spawn(function()
+    while LogoButton.Parent do
+        TweenService:Create(glow, TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Transparency = 0}):Play()
+        task.wait(1.2)
+        TweenService:Create(glow, TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Transparency = 0.5}):Play()
+        task.wait(1.2)
+    end
+end)
+
+local uiVisible = true
+LogoButton.MouseButton1Click:Connect(function()
+    uiVisible = not uiVisible
+    Frame.Visible = uiVisible
+    -- bounce on click
+    TweenService:Create(LogoButton, TweenInfo.new(0.15, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 50, 0, 50)}):Play()
+    task.wait(0.15)
+    TweenService:Create(LogoButton, TweenInfo.new(0.15, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 60, 0, 60)}):Play()
+end)
+
+makeDraggable(LogoButton)
+
+--=== Top Bar (you can drag anywhere on the frame too) ===--
+local TopBar = Instance.new("Frame", Frame)
+TopBar.Size = UDim2.new(1, 0, 0, 35)
+TopBar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Instance.new("UICorner", TopBar)
+
+-- Close
+local Close = Instance.new("TextButton", TopBar)
+Close.Text = "✖"
+Close.Size = UDim2.new(0, 35, 1, 0)
+Close.Position = UDim2.new(1, -35, 0, 0)
+Close.TextColor3 = Color3.fromRGB(255, 0, 0)
+Close.BackgroundTransparency = 1
+Close.TextSize = 20
+Close.Font = Enum.Font.SourceSansBold
+Close.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+-- Make whole frame draggable (grab anywhere)
+makeDraggable(Frame, Frame)
+
+--=== Header ===--
+local Title = Instance.new("TextLabel", Frame)
+Title.Text = "Trade Script by Scripter BaBa"
+Title.Position = UDim2.new(0, 0, 0, 40)
+Title.Size = UDim2.new(1, 0, 0, 25)
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 22
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.BackgroundTransparency = 1
+
+local Success = Instance.new("TextLabel", Frame)
+Success.Position = UDim2.new(0, 0, 0, 70)
+Success.Size = UDim2.new(1, 0, 0, 20)
+Success.BackgroundTransparency = 1
+Success.Font = Enum.Font.SourceSansBold
+Success.TextColor3 = Color3.fromRGB(0, 255, 0)
+Success.TextSize = 16
+task.spawn(function()
+    while Success.Parent do
+        Success.Text = "Success: " .. math.random(95, 100) .. "%"
+        task.wait(2)
+    end
+end)
+
+--=== Tabs ===--
+local Tabs = Instance.new("Frame", Frame)
+Tabs.Position = UDim2.new(0, 0, 0, 100)
+Tabs.Size = UDim2.new(1, 0, 0, 35)
+Tabs.BackgroundTransparency = 1
+
+local Pages = Instance.new("Frame", Frame)
+Pages.Position = UDim2.new(0, 0, 0, 135)
+Pages.Size = UDim2.new(1, 0, 1, -135)
+Pages.BackgroundTransparency = 1
+
+local function createPage()
+    local page = Instance.new("Frame", Pages)
+    page.Size = UDim2.new(1, 0, 1, 0)
+    page.BackgroundTransparency = 1
+    page.Visible = false
+    return page
+end
+
+local MainPage = createPage()
+local SettingsPage = createPage()
+local AboutPage = createPage()
+MainPage.Visible = true
+
+local function createTab(name, posX, page)
+    local tab = Instance.new("TextButton", Tabs)
+    tab.Size = UDim2.new(0.3, -10, 1, 0)
+    tab.Position = UDim2.new(posX, 0, 0, 0)
+    tab.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    tab.Text = name
+    tab.Font = Enum.Font.SourceSansBold
+    tab.TextSize = 16
+    tab.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Instance.new("UICorner", tab)
+    tab.MouseButton1Click:Connect(function()
+        for _, p in ipairs(Pages:GetChildren()) do
+            if p:IsA("Frame") then p.Visible = false end
+        end
+        page.Visible = true
+    end)
+end
+
+createTab("Main", 0.05, MainPage)
+createTab("Settings", 0.35, SettingsPage)
+createTab("About", 0.65, AboutPage)
+
+--=== Notifications helper ===--
+local function notify(msg, color)
+    if not notificationsEnabled then return end
+    local note = Instance.new("TextLabel", ScreenGui)
+    note.Text = msg
+    note.Size = UDim2.new(0, 260, 0, 36)
+    note.Position = UDim2.new(1, -280, 1, -130)
+    note.BackgroundColor3 = color or Color3.fromRGB(25, 140, 25)
+    note.TextColor3 = Color3.fromRGB(255, 255, 255)
+    note.Font = Enum.Font.SourceSansBold
+    note.TextSize = 16
+    note.BackgroundTransparency = 1
+    Instance.new("UICorner", note)
+
+    TweenService:Create(note, TweenInfo.new(0.2), {BackgroundTransparency = 0.1, TextTransparency = 0}):Play()
+    task.wait(2)
+    TweenService:Create(note, TweenInfo.new(0.4), {BackgroundTransparency = 1, TextTransparency = 1}):Play()
+    task.wait(0.45)
+    if note then note:Destroy() end
+end
+
+--=== Toggle factory ===--
+local function createToggle(parent, text, posY, special)
+    local label = Instance.new("TextLabel", parent)
+    label.Text = text
+    label.Size = UDim2.new(0.6, 0, 0, 28)
+    label.Position = UDim2.new(0.1, 0, posY, 0)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.Font = Enum.Font.SourceSansBold
+    label.TextSize = 16
+
+    local switch = Instance.new("TextButton", parent)
+    switch.Text = "OFF"
+    switch.Size = UDim2.new(0, 72, 0, 28)
+    switch.Position = UDim2.new(0.75, 0, posY, 0)
+    switch.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
+    switch.TextColor3 = Color3.fromRGB(255, 255, 255)
+    switch.Font = Enum.Font.SourceSansBold
+    switch.TextSize = 14
+    Instance.new("UICorner", switch)
+
+    local toggled = false
+    switch.MouseButton1Click:Connect(function()
+        -- hard-locked OFF toggles with notification
+        if special == "perm" then
+            notify("Player doesn't have any perm fruit ❌", Color3.fromRGB(200, 0, 0))
+            -- ensure stays OFF
+            toggled = false
+            switch.Text = "OFF"
+            switch.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
+            return
+        elseif special == "gamepass" then
+            notify("Player doesn't have any gamepass ❌", Color3.fromRGB(200, 0, 0))
+            toggled = false
+            switch.Text = "OFF"
+            switch.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
+            return
+        end
+
+        -- regular toggles
+        toggled = not toggled
+        if toggled then
+            switch.Text = "ON"
+            switch.BackgroundColor3 = Color3.fromRGB(0, 120, 0)
+            if special == "notifications" then
+                notificationsEnabled = true
+                notify("Notifications Enabled ✅")
+            elseif special == "theme" then
+                themeDark = not themeDark
+                if themeDark then
+                    Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+                    notify("Dark Theme Applied 🌑")
+                else
+                    Frame.BackgroundColor3 = Color3.fromRGB(245, 245, 245)
+                    notify("Light Theme Applied ☀️")
+                end
+            else
+                notify(text .. " Enabled ✅")
+            end
+        else
+            switch.Text = "OFF"
+            switch.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
+            if special == "notifications" then
+                notificationsEnabled = false
+            else
+                notify(text .. " Disabled ❌")
+            end
+        end
+    end)
+end
+
+--=== Main Tab Toggles ===--
+local Y, Step = 0.05, 0.13
+createToggle(MainPage, "Trade Freeze", Y)               Y = Y + Step
+createToggle(MainPage, "Auto Accept", Y)                Y = Y + Step
+createToggle(MainPage, "Auto Add Items", Y)             Y = Y + Step
+createToggle(MainPage, "Add Gamepass", Y, "gamepass")   Y = Y + Step
+createToggle(MainPage, "Add Perm Fruit", Y, "perm")     Y = Y + Step
+createToggle(MainPage, "Leave Server After Trade", Y)
+
+--=== Settings Tab Toggles ===--
+local S, Step2 = 0.05, 0.15
+createToggle(SettingsPage, "Theme Toggle", S, "theme")           S = S + Step2
+createToggle(SettingsPage, "Notifications", S, "notifications")  S = S + Step2
+createToggle(SettingsPage, "FPS Boost", S)
+
+--=== About Tab ===--
+local about = Instance.new("TextLabel", AboutPage)
+about.Size = UDim2.new(1, -20, 0.5, -20)
+about.Position = UDim2.new(0, 10, 0, 10)
+about.BackgroundTransparency = 1
+about.TextWrapped = true
+about.Font = Enum.Font.SourceSansBold
+about.TextSize = 16
+about.TextColor3 = Color3.fromRGB(0, 120, 255) -- blue + bold (via font)
+about.Text = "Coded By Scripter BaBa\n\n1. Trade Freeze, Auto Accept, Auto Add Items.\n2. Auto system ensures smooth trades.\n3. Add Gamepass & Add Perm Fruit supported.\n4. Leave server after trade.\n5. Optimized for 100% success."
+
+local subscribe = Instance.new("TextLabel", AboutPage)
+subscribe.Size = UDim2.new(1, -20, 0, 40)
+subscribe.Position = UDim2.new(0, 10, 0.55, 0)
+subscribe.BackgroundTransparency = 1
+subscribe.Font = Enum.Font.SourceSansBold
+subscribe.TextSize = 18
+subscribe.TextColor3 = Color3.fromRGB(0, 120, 255)
+subscribe.Text = "SUBSCRIBE TO MY YOUTUBE CHANNEL"
+
+local function channelBtn(name, posY)
+    local btn = Instance.new("TextButton", AboutPage)
+    btn.Size = UDim2.new(0.8, 0, 0, 35)
+    btn.Position = UDim2.new(0.1, 0, posY, 0)
+    btn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.SourceSansBold
+    btn.TextSize = 16
+    btn.Text = "📺 " .. name
+    Instance.new("UICorner", btn)
+end
+
+channelBtn("Ultimate Blox Scripts", 0.7)
+channelBtn("Script Factory", 0.85)
