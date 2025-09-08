@@ -29,28 +29,46 @@ TweenService:Create(Frame, TweenInfo.new(0.7, Enum.EasingStyle.Back, Enum.Easing
     Position = UDim2.new(0.35, 0, 0.25, 0)
 }):Play()
 
--- reusable drag function
+-- reusable drag function (PC + Mobile)
 local function makeDraggable(object, handle)
     local dragging, dragInput, dragStart, startPos
     handle = handle or object
+
+    local function update(input)
+        local delta = input.Position - dragStart
+        object.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+
     handle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 
+        or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
             startPos = object.Position
+
             input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
             end)
         end
     end)
+
     handle.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then dragInput = input end
+        if input.UserInputType == Enum.UserInputType.MouseMovement 
+        or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
     end)
+
     UIS.InputChanged:Connect(function(input)
         if input == dragInput and dragging then
-            local delta = input.Position - dragStart
-            object.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
-                                        startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            update(input)
         end
     end)
 end
@@ -239,7 +257,6 @@ local function createToggle(parent, text, posY, special)
         -- hard-locked OFF toggles with notification
         if special == "perm" then
             notify("Player doesn't have any perm fruit ❌", Color3.fromRGB(200, 0, 0))
-            -- ensure stays OFF
             toggled = false
             switch.Text = "OFF"
             switch.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
@@ -307,7 +324,7 @@ about.BackgroundTransparency = 1
 about.TextWrapped = true
 about.Font = Enum.Font.SourceSansBold
 about.TextSize = 16
-about.TextColor3 = Color3.fromRGB(0, 120, 255) -- blue + bold (via font)
+about.TextColor3 = Color3.fromRGB(0, 120, 255)
 about.Text = "Coded By Scripter BaBa\n\n1. Trade Freeze, Auto Accept, Auto Add Items.\n2. Auto system ensures smooth trades.\n3. Add Gamepass & Add Perm Fruit supported.\n4. Leave server after trade.\n5. Optimized for 100% success."
 
 local subscribe = Instance.new("TextLabel", AboutPage)
